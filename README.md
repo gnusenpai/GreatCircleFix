@@ -5,6 +5,8 @@
 This is a small ASI plugin for Indiana Jones and the Great Circle that fixes cutscene FOV issues when using an ultrawide display.
 
 ## Features
+### General
+- Remove restriction on entering certain console commands.
 
 ### Ultrawide
 - Fixes vert- FOV in cutscenes when using the "Fullscreen" picture framing option.

@@ -162,10 +162,25 @@ void CutsceneFOV()
     }    
 }
 
+void Miscellaneous() 
+{
+    // Remove cvar restrictions
+    std::uint8_t* CVarRestrictionsScanResult = Memory::PatternScan(exeModule, "BA 01 00 00 00 49 ?? ?? 44 ?? ?? 41 FF ?? ?? 66 0F ?? ?? ?? ?? ?? ??");
+    if (CVarRestrictionsScanResult) {
+        spdlog::info("CVar Restrictions: Address is {:s}+{:x}", sExeName.c_str(), CVarRestrictionsScanResult - (std::uint8_t*)exeModule);
+        Memory::Write(CVarRestrictionsScanResult + 0x1, (int)0);
+        spdlog::info("CVar Restrictions: Disabled cvar restrictions.");
+    }
+    else {
+        spdlog::error("CVar Restrictions: Pattern scan failed.");
+    }
+}
+
 DWORD __stdcall Main(void*)
 {
     Logging();
     CutsceneFOV();
+    Miscellaneous();
     return true;
 }
 
