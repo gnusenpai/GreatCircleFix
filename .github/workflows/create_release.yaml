@@ -45,7 +45,6 @@ jobs:
     - name: Prepare Files
       run: |
         cp ${{ github.event.repository.name }}.asi .\zip\
-        cp ${{ github.event.repository.name }}.ini .\zip\
         cp dinput8.dll .\zip\dinput8.dll
 
         cp UltimateASILoader_LICENSE.md .\zip\
