@@ -40,13 +40,13 @@ jobs:
         
     - name: Create Directory Structure
       run: |
-        mkdir .\zip\RainCodePlus\Binaries\Win64
+        mkdir .\zip\
 
     - name: Prepare Files
       run: |
-        cp ${{ github.event.repository.name }}.asi .\zip\RainCodePlus\Binaries\Win64\
-        cp ${{ github.event.repository.name }}.ini .\zip\RainCodePlus\Binaries\Win64\
-        cp dinput8.dll .\zip\RainCodePlus\Binaries\Win64\dsound.dll
+        cp ${{ github.event.repository.name }}.asi .\zip\
+        cp ${{ github.event.repository.name }}.ini .\zip\
+        cp dinput8.dll .\zip\dinput8.dll
 
         cp UltimateASILoader_LICENSE.md .\zip\
         New-Item -Path ".\zip\EXTRACT_TO_GAME_FOLDER" -ItemType File
