@@ -24,7 +24,7 @@ e.g. ("**XboxGames\Indiana Jones and the Great Circle\Content**" for Xbox).
 
 | ![ezgif-3-9601bb0c8b](https://github.com/user-attachments/assets/4a721a78-f3f6-496b-8b44-4d32f89f8261) |
 |:--------------------------:|
-| Cutscene |
+| Main Menu |
 
 ## Known Issues
 Please report any issues you see.
