@@ -2,11 +2,11 @@
 [![Patreon-Button](https://raw.githubusercontent.com/Lyall/GreatCircleFix/refs/heads/master/.github/Patreon-Button.png)](https://www.patreon.com/Wintermance) [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W01UAI9)<br />
 [![Github All Releases](https://img.shields.io/github/downloads/Lyall/GreatCircleFix/total.svg)](https://github.com/Lyall/GreatCircleFix/releases)
 
-This is a small ASI plugin for Indiana Jones and the Great Circle that fixes cutscene FOV issues when using an ultrawide display.
+This is an ASI plugin for Indiana Jones and the Great Circle that fixes cutscene FOV issues when using an ultrawide display and more.
 
 ## Features
 ### General
-- Remove restriction on entering certain console commands.
+- Remove restrictions on entering certain console commands.
 
 ### Ultrawide
 - Fixes vert- FOV in cutscenes when using the "Fullscreen" picture framing option.
