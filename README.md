@@ -6,10 +6,12 @@ This is an ASI plugin for Indiana Jones and the Great Circle that fixes cutscene
 
 ## Features
 ### General
-- Remove restrictions on entering certain console commands.
+- Unrestrict available console commands.
+- Allow changing read-only console commands.
+- Skip intro videos. 
 
 ### Ultrawide
-- Fixes vert- FOV in cutscenes when using the "Fullscreen" picture framing option.
+- Fix vert- FOV in cutscenes when using the "Fullscreen" picture framing option.
 
 ## Installation
 - Grab the latest release of GreatCircleFix from [here.](https://github.com/Lyall/GreatCircleFix/releases)
