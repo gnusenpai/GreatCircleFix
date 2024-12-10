@@ -120,6 +120,35 @@ void CalculateAspectRatio(bool bLog)
     }
 }
 
+void Miscellaneous()
+{
+    // com_skipIntroVideo
+    std::uint8_t* SkipIntroVideoScanResult = Memory::PatternScan(exeModule, "0F 95 ?? ?? ?? FF 15 ?? ?? ?? ?? 48 8B ?? ?? 48 8D ?? ?? ?? ?? ??");
+    if (SkipIntroVideoScanResult) {
+        spdlog::info("Skip Intro Video: Address is {:s}+{:x}", sExeName.c_str(), SkipIntroVideoScanResult - (std::uint8_t*)exeModule);
+        static SafetyHookMid SkipIntroVideoMidHook{};
+        SkipIntroVideoMidHook = safetyhook::create_mid(SkipIntroVideoScanResult,
+            [](SafetyHookContext& ctx) {
+                // Clear ZF
+                ctx.rflags &= ~(1 << 6);
+            });
+    }
+    else {
+        spdlog::error("Skip Intro Video: Pattern scan failed.");
+    }
+
+    // Remove cvar restrictions
+    std::uint8_t* CVarRestrictionsScanResult = Memory::PatternScan(exeModule, "BA 01 00 00 00 49 ?? ?? 44 ?? ?? 41 FF ?? ?? 66 0F ?? ?? ?? ?? ?? ??");
+    if (CVarRestrictionsScanResult) {
+        spdlog::info("CVar Restrictions: Address is {:s}+{:x}", sExeName.c_str(), CVarRestrictionsScanResult - (std::uint8_t*)exeModule);
+        Memory::Write(CVarRestrictionsScanResult + 0x1, (int)0);
+        spdlog::info("CVar Restrictions: Disabled cvar restrictions.");
+    }
+    else {
+        spdlog::error("CVar Restrictions: Pattern scan failed.");
+    }
+}
+
 void CutsceneFOV()
 {
     // Grab desktop resolution/aspect just in case
@@ -132,8 +161,8 @@ void CutsceneFOV()
     std::uint8_t* CutsceneFOVScanResult = Memory::PatternScan(exeModule, "83 ?? ?? ?? 02 0F 28 ?? 48 8B ?? ?? ?? 0F 57 ?? F3 0F ?? ?? F3 0F ?? ?? ?? ?? ?? ??");
     if (CutsceneFOVScanResult) {
         spdlog::info("Cutscene FOV: Address is {:s}+{:x}", sExeName.c_str(), CutsceneFOVScanResult - (std::uint8_t*)exeModule);
-        static SafetyHookMid FOVMidHook{};
-        FOVMidHook = safetyhook::create_mid(CutsceneFOVScanResult + 0x8,
+        static SafetyHookMid CutsceneFOVMidHook{};
+        CutsceneFOVMidHook = safetyhook::create_mid(CutsceneFOVScanResult + 0x8,
             [](SafetyHookContext& ctx) {
                 // Check for "Fullscreen" picture framing option
                 if (ctx.rax == 0) {
@@ -162,25 +191,11 @@ void CutsceneFOV()
     }    
 }
 
-void Miscellaneous() 
-{
-    // Remove cvar restrictions
-    std::uint8_t* CVarRestrictionsScanResult = Memory::PatternScan(exeModule, "BA 01 00 00 00 49 ?? ?? 44 ?? ?? 41 FF ?? ?? 66 0F ?? ?? ?? ?? ?? ??");
-    if (CVarRestrictionsScanResult) {
-        spdlog::info("CVar Restrictions: Address is {:s}+{:x}", sExeName.c_str(), CVarRestrictionsScanResult - (std::uint8_t*)exeModule);
-        Memory::Write(CVarRestrictionsScanResult + 0x1, (int)0);
-        spdlog::info("CVar Restrictions: Disabled cvar restrictions.");
-    }
-    else {
-        spdlog::error("CVar Restrictions: Pattern scan failed.");
-    }
-}
-
 DWORD __stdcall Main(void*)
 {
     Logging();
-    CutsceneFOV();
     Miscellaneous();
+    CutsceneFOV();
     return true;
 }
 
