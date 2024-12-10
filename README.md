@@ -16,7 +16,7 @@ This is an ASI plugin for Indiana Jones and the Great Circle that fixes cutscene
 ## Installation
 - Grab the latest release of GreatCircleFix from [here.](https://github.com/Lyall/GreatCircleFix/releases)
 - Extract the contents of the release zip in to the the game folder.
-e.g. ("**XboxGames\Indiana Jones and the Great Circle\Content**" for Xbox).
+e.g. ("**XboxGames\Indiana Jones and the Great Circle\Content**" for Xbox or "**steamapps\common\The Great Circle**" for Steam).
 
 ### Steam Deck/Linux Additional Instructions
 🚩**You do not need to do this if you are using Windows!**
