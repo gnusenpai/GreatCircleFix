@@ -131,6 +131,8 @@ void Miscellaneous()
             [](SafetyHookContext& ctx) {
                 // Clear ZF
                 ctx.rflags &= ~(1 << 6);
+
+                spdlog::info("Skip Intro Video: Skipped intro videos.");
             });
     }
     else {
@@ -146,6 +148,21 @@ void Miscellaneous()
     }
     else {
         spdlog::error("CVar Restrictions: Pattern scan failed.");
+    }
+
+    // Remove read-only flag check for cvars
+    std::uint8_t* ReadOnlyCvarScanResult = Memory::PatternScan(exeModule, "0F ?? ?? 0E 73 ?? 48 8B ?? ?? 48 8D ?? ?? ?? ?? ?? E8 ?? ?? ?? ??");
+    if (ReadOnlyCvarScanResult) {
+        spdlog::info("Read-Only Cvars: Address is {:s}+{:x}", sExeName.c_str(), ReadOnlyCvarScanResult - (std::uint8_t*)exeModule);
+        static SafetyHookMid ReadOnlyCvarMidHook{};
+        ReadOnlyCvarMidHook = safetyhook::create_mid(ReadOnlyCvarScanResult,
+            [](SafetyHookContext& ctx) {
+                // Clear read-only flag (bit 15)
+                ctx.rax &= ~(1 << 15);
+            });
+    }
+    else {
+        spdlog::error("Read-Only Cvars: Pattern scan failed.");
     }
 }
 
