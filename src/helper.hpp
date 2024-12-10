@@ -102,6 +102,42 @@ namespace Memory
 
         return absoluteAddress;
     }
+
+    BOOL HookIAT(HMODULE callerModule, char const* targetModule, const void* targetFunction, void* detourFunction)
+    {
+        auto* base = (uint8_t*)callerModule;
+        const auto* dos_header = (IMAGE_DOS_HEADER*)base;
+        const auto nt_headers = (IMAGE_NT_HEADERS*)(base + dos_header->e_lfanew);
+        const auto* imports = (IMAGE_IMPORT_DESCRIPTOR*)(base + nt_headers->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
+
+        for (int i = 0; imports[i].Characteristics; i++)
+        {
+            const char* name = (const char*)(base + imports[i].Name);
+            if (lstrcmpiA(name, targetModule) != 0)
+                continue;
+
+            void** thunk = (void**)(base + imports[i].FirstThunk);
+
+            for (; *thunk; thunk++)
+            {
+                const void* import = *thunk;
+
+                if (import != targetFunction)
+                    continue;
+
+                DWORD oldState;
+                if (!VirtualProtect(thunk, sizeof(void*), PAGE_READWRITE, &oldState))
+                    return FALSE;
+
+                *thunk = detourFunction;
+
+                VirtualProtect(thunk, sizeof(void*), oldState, &oldState);
+
+                return TRUE;
+            }
+        }
+        return FALSE;
+    }
 }
 
 namespace Util
@@ -114,13 +150,19 @@ namespace Util
         return {};
     }
 
-    std::string wstring_to_string(const wchar_t* wstr)
+    std::string wstring_to_string(const std::wstring& wstr) 
     {
-        size_t len = std::wcslen(wstr);
-        std::string str(len, '\0');
+        if (wstr.empty()) return {};
+        std::string str(wstr.size() * 2, '\0');
         size_t converted = 0;
-        wcstombs_s(&converted, &str[0], str.size() + 1, wstr, str.size());
+        wcstombs_s(&converted, &str[0], str.size() + 1, wstr.c_str(), str.size());
+        str.resize(converted - 1);
         return str;
+    }
+
+    std::string wstring_to_string(const wchar_t* wstr) 
+    {
+        return wstr ? wstring_to_string(std::wstring(wstr)) : std::string{};
     }
 
     bool stringcmp_caseless(const std::string& str1, const std::string& str2) 
