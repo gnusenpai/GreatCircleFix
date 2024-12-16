@@ -12,7 +12,7 @@ HMODULE thisModule;
 
 // Fix details
 std::string sFixName = "GreatCircleFix";
-std::string sFixVersion = "0.0.2";
+std::string sFixVersion = "0.0.3";
 std::filesystem::path sFixPath;
 
 // Logger
@@ -37,6 +37,7 @@ int iCurrentResX;
 int iCurrentResY;
 int iOldResX;
 int iOldResY;
+uint8_t* idCmdSystemLocal = nullptr;
 
 void Logging()
 {
@@ -208,11 +209,66 @@ void CutsceneFOV()
     }    
 }
 
+struct CVar {
+    int type;
+    const char* name;
+    const char* value;
+};
+
+using SetCVar_t = char(*)(void*, void*);
+SetCVar_t SetCVar_fn = nullptr;
+
+void SetCVar(const std::string& cvarString)
+{
+    if (!SetCVar_fn || !idCmdSystemLocal)
+        return;
+
+    auto separator = cvarString.find(' ');
+    if (separator == std::string::npos)
+        return;
+
+    std::string name = cvarString.substr(0, separator);
+    std::string value = cvarString.substr(separator + 1);
+
+    CVar cvar{ 2, name.c_str(), value.c_str() };
+
+    SetCVar_fn(idCmdSystemLocal, &cvar);
+    spdlog::info("Set CVar: {} = {}", name, value);
+}
+
+void CVars()
+{
+    // Get idCmdSystemLocal
+    std::uint8_t* idCmdSystemScanResult = Memory::PatternScan(exeModule, "48 8B ?? ?? ?? ?? ?? 4C 8B ?? 48 8B ?? FF ?? ?? B9 ?? ?? ?? ?? 41 ?? ?? ?? ?? ??");
+    if (idCmdSystemScanResult) {
+        spdlog::info("idCmdSystemLocal: Address is {:s}+{:x}", sExeName.c_str(), idCmdSystemScanResult - (std::uint8_t*)exeModule);
+        idCmdSystemLocal = *reinterpret_cast<uint8_t**>(Memory::GetAbsolute(idCmdSystemScanResult + 0x3));
+        spdlog::info("idCmdSystemLocal: idCmdSystemLocal address is {:x}", (uintptr_t)idCmdSystemLocal);
+    }
+    else {
+        spdlog::error("idCmdSystemLocal: Pattern scan failed.");
+    }
+
+    // Get SetCVar function
+    std::uint8_t* SetCVarScanResult = Memory::PatternScan(exeModule, "40 ?? 53 41 ?? 48 8D ?? ?? ?? 48 81 ?? ?? ?? ?? ?? 48 8B ?? ?? ?? ?? ?? 48 33 ?? 48 89 ?? ?? 8B ?? 4C 8B ??");
+    if (SetCVarScanResult) {
+        spdlog::info("Set CVar Function: Address is {:s}+{:x}", sExeName.c_str(), SetCVarScanResult - (std::uint8_t*)exeModule);
+        SetCVar_fn = reinterpret_cast<SetCVar_t>(SetCVarScanResult);
+    }
+    else {
+        spdlog::error("Set CVar Function: Pattern scan failed.");
+    }
+
+    // Set CVars
+    SetCVar("r_SkipGPUTriangleCulling 1"); // Fixes culling artifacts at wider aspect ratios.
+}
+
 DWORD __stdcall Main(void*)
 {
     Logging();
     Miscellaneous();
     CutsceneFOV();
+    CVars();
     return true;
 }
 
