@@ -213,7 +213,7 @@ void AspectRatioFOV()
     if (TriangleCullingScanResult) {
         spdlog::info("GPU Triangle Culling: Address is {:s}+{:x}", sExeName.c_str(), TriangleCullingScanResult - (std::uint8_t*)exeModule);
         Memory::PatchBytes(TriangleCullingScanResult + 0x5, "\x57", 1);
-        spdlog::error("GPU Triangle Culling: Patched instruction.");
+        spdlog::info("GPU Triangle Culling: Patched instruction.");
     }
     else {
         spdlog::error("GPU Triangle Culling: Pattern scan failed.");
