@@ -167,7 +167,7 @@ void Miscellaneous()
     }
 }
 
-void CutsceneFOV()
+void AspectRatioFOV()
 {
     // Grab desktop resolution/aspect just in case
     DesktopDimensions = Util::GetPhysicalDesktopDimensions();
@@ -206,7 +206,18 @@ void CutsceneFOV()
     }
     else {
         spdlog::error("Cutscene FOV: Pattern scan failed.");
-    }    
+    } 
+
+    // Fix culling issues at wider aspect ratios
+    std::uint8_t* TriangleCullingScanResult = Memory::PatternScan(exeModule, "66 0F ?? ?? 0F ?? ?? 8B ?? ?? ?? ?? ?? ?? 85 ?? ?? ?? ?? ?? 74 ?? 48 8B ?? E8 ?? ?? ?? ?? 48 8D ?? ?? F3 0F ?? ?? ?? ??");
+    if (TriangleCullingScanResult) {
+        spdlog::info("GPU Triangle Culling: Address is {:s}+{:x}", sExeName.c_str(), TriangleCullingScanResult - (std::uint8_t*)exeModule);
+        Memory::PatchBytes(TriangleCullingScanResult + 0x5, "\x57", 1);
+        spdlog::error("GPU Triangle Culling: Patched instruction.");
+    }
+    else {
+        spdlog::error("GPU Triangle Culling: Pattern scan failed.");
+    }
 }
 
 struct CVar {
@@ -258,17 +269,14 @@ void CVars()
     else {
         spdlog::error("Set CVar Function: Pattern scan failed.");
     }
-
-    // Set CVars
-    SetCVar("r_SkipGPUTriangleCulling 1"); // Fixes culling artifacts at wider aspect ratios.
 }
 
 DWORD __stdcall Main(void*)
 {
     Logging();
     Miscellaneous();
-    CutsceneFOV();
-    CVars();
+    AspectRatioFOV();
+    //CVars();
     return true;
 }
 
