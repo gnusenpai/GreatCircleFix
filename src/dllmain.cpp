@@ -121,7 +121,7 @@ void CalculateAspectRatio(bool bLog)
     }
 }
 
-void Miscellaneous()
+void SkipIntro()
 {
     // com_skipIntroVideo
     std::uint8_t* SkipIntroVideoScanResult = Memory::PatternScan(exeModule, "0F 95 ?? ?? ?? FF 15 ?? ?? ?? ?? 48 8B ?? ?? 48 8D ?? ?? ?? ?? ??");
@@ -139,7 +139,39 @@ void Miscellaneous()
     else {
         spdlog::error("Skip Intro Video: Pattern scan failed.");
     }
+}
 
+struct CVar {
+    int type;
+    const char* name;
+    const char* value;
+};
+
+using SetCVar_t = char(*)(void*, void*);
+SetCVar_t SetCVar_fn = nullptr;
+
+void SetCVar(const std::string& cvarString)
+{
+    if (!SetCVar_fn || !idCmdSystemLocal) {
+        spdlog::error("Set CVar: Function address or idCmdSystemLocal address incorrect.");
+        return;
+    }
+
+    auto separator = cvarString.find(' ');
+    if (separator == std::string::npos)
+        return;
+
+    std::string name = cvarString.substr(0, separator);
+    std::string value = cvarString.substr(separator + 1);
+
+    CVar cvar{ 2, name.c_str(), value.c_str() };
+
+    SetCVar_fn(idCmdSystemLocal, &cvar);
+    spdlog::info("Set CVar: {} = {}", name, value);
+}
+
+void CVars()
+{
     // Remove cvar restrictions
     std::uint8_t* CVarRestrictionsScanResult = Memory::PatternScan(exeModule, "BA 01 00 00 00 49 ?? ?? 44 ?? ?? 41 FF ?? ?? 66 0F ?? ?? ?? ?? ?? ??");
     if (CVarRestrictionsScanResult) {
@@ -164,6 +196,50 @@ void Miscellaneous()
     }
     else {
         spdlog::error("Read-Only Cvars: Pattern scan failed.");
+    }
+
+    // Get idCmdSystemLocal
+    std::uint8_t* idCmdSystemScanResult = Memory::PatternScan(exeModule, "48 8D ?? ?? ?? ?? ?? 48 89 ?? ?? ?? ?? ?? 48 89 ?? ?? E8 ?? ?? ?? ?? 48 8B ?? ?? ?? ?? ?? 48 8D ?? ?? ?? ?? ?? B9 00 01 00 00");
+    if (idCmdSystemScanResult) {
+        spdlog::info("idCmdSystemLocal: Address is {:s}+{:x}", sExeName.c_str(), idCmdSystemScanResult - (std::uint8_t*)exeModule);
+
+        for (int i = 0; i < 15; ++i) {
+            idCmdSystemLocal = Memory::GetAbsolute(idCmdSystemScanResult + 0x3);
+            if (*(uint8_t*)idCmdSystemLocal)
+                break;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+
+        spdlog::info("idCmdSystemLocal: idCmdSystemLocal address is {:x}", (uintptr_t)idCmdSystemLocal);
+    }
+    else {
+        spdlog::error("idCmdSystemLocal: Pattern scan failed.");
+    }
+
+    // Get SetCVar function
+    std::uint8_t* SetCVarScanResult = Memory::PatternScan(exeModule, "40 ?? 53 41 ?? 48 8D ?? ?? ?? 48 81 ?? ?? ?? ?? ?? 48 8B ?? ?? ?? ?? ?? 48 33 ?? 48 89 ?? ?? 8B ?? 4C 8B ??");
+    if (SetCVarScanResult) {
+        spdlog::info("Set CVar Function: Address is {:s}+{:x}", sExeName.c_str(), SetCVarScanResult - (std::uint8_t*)exeModule);
+        SetCVar_fn = reinterpret_cast<SetCVar_t>(SetCVarScanResult);
+    }
+    else {
+        spdlog::error("Set CVar Function: Pattern scan failed.");
+    }
+
+    // idLoadScreen::LevelLoadCompleted()
+    std::uint8_t* LevelLoadCompletedScanResult = Memory::PatternScan(exeModule, "48 89 ?? ?? ?? 48 89 ?? ?? ?? 48 89 ?? ?? ?? 57 48 83 ?? ?? 48 8D ?? ?? ?? ?? ?? E8 ?? ?? ?? ??");
+    if (LevelLoadCompletedScanResult) {
+        spdlog::info("LevelLoadCompleted(): Address is {:s}+{:x}", sExeName.c_str(), LevelLoadCompletedScanResult - (std::uint8_t*)exeModule);
+        static SafetyHookMid LevelLoadCompletedMidHook{};
+        LevelLoadCompletedMidHook = safetyhook::create_mid(LevelLoadCompletedScanResult,
+            [](SafetyHookContext& ctx) {
+                // Fix culling issues
+                SetCVar("r_gpuTriangleCullingOptions 0");
+                SetCVar("r_gpugatherskipocclusionpass 1");
+            });
+    }
+    else {
+        spdlog::error("LevelLoadCompleted(): Pattern scan failed.");
     }
 }
 
@@ -207,76 +283,20 @@ void AspectRatioFOV()
     else {
         spdlog::error("Cutscene FOV: Pattern scan failed.");
     } 
-
-    // Fix culling issues at wider aspect ratios
-    std::uint8_t* TriangleCullingScanResult = Memory::PatternScan(exeModule, "66 0F ?? ?? 0F ?? ?? 8B ?? ?? ?? ?? ?? ?? 85 ?? ?? ?? ?? ?? 74 ?? 48 8B ?? E8 ?? ?? ?? ?? 48 8D ?? ?? F3 0F ?? ?? ?? ??");
-    if (TriangleCullingScanResult) {
-        spdlog::info("GPU Triangle Culling: Address is {:s}+{:x}", sExeName.c_str(), TriangleCullingScanResult - (std::uint8_t*)exeModule);
-        Memory::PatchBytes(TriangleCullingScanResult + 0x5, "\x57", 1);
-        spdlog::info("GPU Triangle Culling: Patched instruction.");
-    }
-    else {
-        spdlog::error("GPU Triangle Culling: Pattern scan failed.");
-    }
 }
 
-struct CVar {
-    int type;
-    const char* name;
-    const char* value;
-};
-
-using SetCVar_t = char(*)(void*, void*);
-SetCVar_t SetCVar_fn = nullptr;
-
-void SetCVar(const std::string& cvarString)
+void Framerate()
 {
-    if (!SetCVar_fn || !idCmdSystemLocal)
-        return;
-
-    auto separator = cvarString.find(' ');
-    if (separator == std::string::npos)
-        return;
-
-    std::string name = cvarString.substr(0, separator);
-    std::string value = cvarString.substr(separator + 1);
-
-    CVar cvar{ 2, name.c_str(), value.c_str() };
-
-    SetCVar_fn(idCmdSystemLocal, &cvar);
-    spdlog::info("Set CVar: {} = {}", name, value);
-}
-
-void CVars()
-{
-    // Get idCmdSystemLocal
-    std::uint8_t* idCmdSystemScanResult = Memory::PatternScan(exeModule, "48 8B ?? ?? ?? ?? ?? 4C 8B ?? 48 8B ?? FF ?? ?? B9 ?? ?? ?? ?? 41 ?? ?? ?? ?? ??");
-    if (idCmdSystemScanResult) {
-        spdlog::info("idCmdSystemLocal: Address is {:s}+{:x}", sExeName.c_str(), idCmdSystemScanResult - (std::uint8_t*)exeModule);
-        idCmdSystemLocal = *reinterpret_cast<uint8_t**>(Memory::GetAbsolute(idCmdSystemScanResult + 0x3));
-        spdlog::info("idCmdSystemLocal: idCmdSystemLocal address is {:x}", (uintptr_t)idCmdSystemLocal);
-    }
-    else {
-        spdlog::error("idCmdSystemLocal: Pattern scan failed.");
-    }
-
-    // Get SetCVar function
-    std::uint8_t* SetCVarScanResult = Memory::PatternScan(exeModule, "40 ?? 53 41 ?? 48 8D ?? ?? ?? 48 81 ?? ?? ?? ?? ?? 48 8B ?? ?? ?? ?? ?? 48 33 ?? 48 89 ?? ?? 8B ?? 4C 8B ??");
-    if (SetCVarScanResult) {
-        spdlog::info("Set CVar Function: Address is {:s}+{:x}", sExeName.c_str(), SetCVarScanResult - (std::uint8_t*)exeModule);
-        SetCVar_fn = reinterpret_cast<SetCVar_t>(SetCVarScanResult);
-    }
-    else {
-        spdlog::error("Set CVar Function: Pattern scan failed.");
-    }
+    
 }
 
 DWORD __stdcall Main(void*)
 {
     Logging();
-    Miscellaneous();
+    SkipIntro();
+    CVars();
     AspectRatioFOV();
-    //CVars();
+    Framerate();
     return true;
 }
 
