@@ -27,6 +27,9 @@ e.g. ("**XboxGames\Indiana Jones and the Great Circle\Content**" for Xbox or "**
 🚩**You do not need to do this if you are using Windows!**
 - Open up the game properties in Steam and add `WINEDLLOVERRIDES="dinput8=n,b" %command%` to the launch options.
 
+## Configuration
+- See **GreatCircleFix.ini** to adjust settings.
+
 ## Screenshots
 
 | ![ezgif-3-9601bb0c8b](https://github.com/user-attachments/assets/4a721a78-f3f6-496b-8b44-4d32f89f8261) |

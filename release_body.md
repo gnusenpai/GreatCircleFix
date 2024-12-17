@@ -9,3 +9,6 @@ e.g. ("**XboxGames\Indiana Jones and the Great Circle\Content**" for Xbox or "**
 ### Steam Deck/Linux Additional Instructions
 🚩**You do not need to do this if you are using Windows!**
 - Open up the game properties in Steam and add `WINEDLLOVERRIDES="dinput8=n,b" %command%` to the launch options.
+
+## Configuration
+- See **GreatCircleFix.ini** to adjust settings.
