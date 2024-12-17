@@ -383,7 +383,16 @@ void Framerate()
             spdlog::info("Cutscene Framerate Unlock: Enabled framerate unlock.");
         }
         else {
-            spdlog::error("Cutscene Framerate Unlock: Pattern scan failed.");
+            // Update 2 added extra checks around where we patch, check for those separately
+            CutsceneFramerateScanResult = Memory::PatternScan(exeModule, "48 8B 41 28 48 39 98 08 03 00 00 75 1C");
+            if (CutsceneFramerateScanResult) {
+                spdlog::info("Cutscene Framerate Unlock (Upd2): Address is {:s}+{:x}", sExeName.c_str(), CutsceneFramerateScanResult - (std::uint8_t*)exeModule);
+                Memory::PatchBytes(CutsceneFramerateScanResult + 0xB, "\x90\x90", 2);
+                spdlog::info("Cutscene Framerate Unlock (Upd2): Enabled framerate unlock.");
+            }
+            else {
+                spdlog::error("Cutscene Framerate Unlock: Pattern scan failed.");
+            }
         }
     }
 }
