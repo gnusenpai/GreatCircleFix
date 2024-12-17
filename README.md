@@ -12,6 +12,11 @@ This is an ASI plugin for Indiana Jones and the Great Circle that fixes cutscene
 
 ### Ultrawide
 - Fix vert- FOV in cutscenes when using the "Fullscreen" picture framing option.
+- Fix culling issues at wider aspect ratios.
+
+### Framerate
+- Allow frame generation in cutscenes.
+- Unlock cutscene framerate.
 
 ## Installation
 - Grab the latest release of GreatCircleFix from [here.](https://github.com/Lyall/GreatCircleFix/releases)
