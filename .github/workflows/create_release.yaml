@@ -26,7 +26,6 @@ jobs:
       
     - run: msbuild ${{ github.event.repository.name }}.sln -t:rebuild -verbosity:diag -property:Configuration=Release -property:Platform=x64
     - run: cp x64\Release\${{ github.event.repository.name }}.asi ${{ github.event.repository.name }}.asi
-    - run: cp x64\Release\${{ github.event.repository.name }}.ini ${{ github.event.repository.name }}.ini
 
     - uses: robinraju/release-downloader@v1.11
       with:
@@ -46,6 +45,7 @@ jobs:
     - name: Prepare Files
       run: |
         cp ${{ github.event.repository.name }}.asi .\zip\
+        cp ${{ github.event.repository.name }}.ini .\zip\
         cp dinput8.dll .\zip\dinput8.dll
 
         cp UltimateASILoader_LICENSE.md .\zip\
