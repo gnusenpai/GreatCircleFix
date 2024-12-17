@@ -232,37 +232,20 @@ void CVars()
 {
     if (bUnrestrictCVars) {
         // Remove cvar restrictions
-        std::uint8_t* CVarRestrictionsScanResult = Memory::PatternScan(exeModule, "BA 01 00 00 00 49 ?? ?? 44 ?? ?? 41 FF ?? ?? 66 0F ?? ?? ?? ?? ?? ??");
-        if (CVarRestrictionsScanResult) {
-            spdlog::info("CVar Restrictions: Address is {:s}+{:x}", sExeName.c_str(), CVarRestrictionsScanResult - (std::uint8_t*)exeModule);
-            Memory::Write(CVarRestrictionsScanResult + 0x1, (int)0);
-            spdlog::info("CVar Restrictions: Disabled cvar restrictions.");
-        }
-        else {
-            spdlog::error("CVar Restrictions: Pattern scan failed.");
-        }
-
-        // Remove restrictions on binding cvars. e.g. bind pgdn r_examplecvar 1
+        std::uint8_t* ConsoleCVarRestrictionsScanResult = Memory::PatternScan(exeModule, "BA 01 00 00 00 49 ?? ?? 44 ?? ?? 41 FF ?? ?? 66 0F ?? ?? ?? ?? ?? ??");
         std::uint8_t* BindCVarRestrictionsScanResult = Memory::PatternScan(exeModule, "BA 01 00 00 00 49 ?? ?? 8B ?? 41 FF ?? ?? 8B ?? 8B ?? E8 ?? ?? ?? ??");
-        if (BindCVarRestrictionsScanResult) {
-            spdlog::info("Bind CVar Restrictions: Address is {:s}+{:x}", sExeName.c_str(), BindCVarRestrictionsScanResult - (std::uint8_t*)exeModule);
-            Memory::Write(BindCVarRestrictionsScanResult + 0x1, (int)0);
-            spdlog::info("Bind CVar Restrictions: Disabled cvar bind restrictions.");
-        }
-        else {
-            spdlog::error("Bind CVar Restrictions: Pattern scan failed.");
-        }
-
-        // Remove restrictions on executing cvars. e.g. exec example.cfg
-        // This should allow setting restricted cvars in a cfg file and exec'ing it via default.cfg
         std::uint8_t* ExecCVarRestrictionsScanResult = Memory::PatternScan(exeModule, "BA 01 00 00 00 E8 ?? ?? ?? ?? 83 ?? ?? ?? ?? ?? 00 0F 84 ?? ?? ?? ??");
-        if (ExecCVarRestrictionsScanResult) {
-            spdlog::info("Exec CVar Restrictions: Address is {:s}+{:x}", sExeName.c_str(), ExecCVarRestrictionsScanResult - (std::uint8_t*)exeModule);
+        if (ConsoleCVarRestrictionsScanResult && BindCVarRestrictionsScanResult && ExecCVarRestrictionsScanResult) {
+            spdlog::info("CVar Restrictions: Console: Address is {:s}+{:x}", sExeName.c_str(), ConsoleCVarRestrictionsScanResult - (std::uint8_t*)exeModule);
+            Memory::Write(ConsoleCVarRestrictionsScanResult + 0x1, (int)0);
+            spdlog::info("CVar Restrictions: Bind: Address is {:s}+{:x}", sExeName.c_str(), BindCVarRestrictionsScanResult - (std::uint8_t*)exeModule);
+            Memory::Write(BindCVarRestrictionsScanResult + 0x1, (int)0);
+            spdlog::info("CVar Restrictions: Exec: Address is {:s}+{:x}", sExeName.c_str(), ExecCVarRestrictionsScanResult - (std::uint8_t*)exeModule);
             Memory::Write(ExecCVarRestrictionsScanResult + 0x1, (int)0);
-            spdlog::info("Exec CVar Restrictions: Disabled cvar Exec restrictions.");
+            spdlog::info("CVar Restrictions: Disabled restrictions.");
         }
         else {
-            spdlog::error("Exec CVar Restrictions: Pattern scan failed.");
+            spdlog::error("CVar Restrictions: Pattern scan(s) failed.");
         }
 
         // Remove read-only flag check for cvars
