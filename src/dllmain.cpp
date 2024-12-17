@@ -242,6 +242,17 @@ void CVars()
             spdlog::error("CVar Restrictions: Pattern scan failed.");
         }
 
+        // Remove restrictions on binding cvars
+        std::uint8_t* BindCVarRestrictionsScanResult = Memory::PatternScan(exeModule, "BA 01 00 00 00 49 ?? ?? 8B ?? 41 FF ?? ?? 8B ?? 8B ?? E8 ?? ?? ?? ??");
+        if (BindCVarRestrictionsScanResult) {
+            spdlog::info("Bind CVar Restrictions: Address is {:s}+{:x}", sExeName.c_str(), BindCVarRestrictionsScanResult - (std::uint8_t*)exeModule);
+            Memory::Write(BindCVarRestrictionsScanResult + 0x1, (int)0);
+            spdlog::info("Bind CVar Restrictions: Disabled cvar bind restrictions.");
+        }
+        else {
+            spdlog::error("Bind CVar Restrictions: Pattern scan failed.");
+        }
+
         // Remove read-only flag check for cvars
         std::uint8_t* ReadOnlyCvarScanResult = Memory::PatternScan(exeModule, "0F ?? ?? 0E 73 ?? 48 8B ?? ?? 48 8D ?? ?? ?? ?? ?? E8 ?? ?? ?? ??");
         if (ReadOnlyCvarScanResult) {
