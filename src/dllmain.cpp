@@ -296,7 +296,6 @@ void CVars()
                 if (bFixCulling) {
                     // Fix culling issues
                     SetCVar("r_gpuTriangleCullingOptions 0");
-                    SetCVar("r_gpugatherskipocclusionpass 1");
                 }
             });
     }
