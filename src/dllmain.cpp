@@ -254,6 +254,7 @@ void CVars()
         }
 
         // Remove restrictions on executing cvars. e.g. exec example.cfg
+        // This should allow setting restricted cvars in a cfg file and exec'ing it via default.cfg
         std::uint8_t* ExecCVarRestrictionsScanResult = Memory::PatternScan(exeModule, "BA 01 00 00 00 E8 ?? ?? ?? ?? 83 ?? ?? ?? ?? ?? 00 0F 84 ?? ?? ?? ??");
         if (ExecCVarRestrictionsScanResult) {
             spdlog::info("Exec CVar Restrictions: Address is {:s}+{:x}", sExeName.c_str(), ExecCVarRestrictionsScanResult - (std::uint8_t*)exeModule);
