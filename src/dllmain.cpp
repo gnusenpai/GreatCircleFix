@@ -42,6 +42,8 @@ bool bSkipIntro;
 bool bFixCutsceneFOV;
 bool bFixCulling;
 bool bUnrestrictCVars;
+bool bCutsceneFrameGeneration;
+bool bCutsceneFramerateUnlock;
 
 // Variables
 int iCurrentResX;
@@ -94,7 +96,7 @@ void Logging()
 void Configuration()
 {
     // Inipp initialisation
-    std::ifstream iniFile(sFixPath.string() + sConfigFile);
+    std::ifstream iniFile(sFixPath / sConfigFile);
     if (!iniFile) {
         AllocConsole();
         FILE* dummy;
@@ -102,6 +104,7 @@ void Configuration()
         std::cout << "" << sFixName.c_str() << " v" << sFixVersion.c_str() << " loaded." << std::endl;
         std::cout << "ERROR: Could not locate config file." << std::endl;
         std::cout << "ERROR: Make sure " << sConfigFile.c_str() << " is located in " << sFixPath.string().c_str() << std::endl;
+        spdlog::error("ERROR: Could not locate config file {}", sConfigFile);
         spdlog::shutdown();
         FreeLibraryAndExitThread(thisModule, 1);
     }
@@ -119,12 +122,16 @@ void Configuration()
     inipp::get_value(ini.sections["Unrestrict CVars"], "Enabled", bUnrestrictCVars);
     inipp::get_value(ini.sections["Fix Cutscene FOV"], "Enabled", bFixCutsceneFOV);
     inipp::get_value(ini.sections["Fix Culling"], "Enabled", bFixCulling);
+    inipp::get_value(ini.sections["Cutscene Frame Generation"], "Enabled", bCutsceneFrameGeneration);
+    inipp::get_value(ini.sections["Cutscene Framerate Unlock"], "Enabled", bCutsceneFramerateUnlock);
 
     // Log ini parse
     spdlog_confparse(bSkipIntro);
     spdlog_confparse(bUnrestrictCVars);
     spdlog_confparse(bFixCutsceneFOV);
     spdlog_confparse(bFixCulling);
+    spdlog_confparse(bCutsceneFrameGeneration);
+    spdlog_confparse(bCutsceneFramerateUnlock);
 
     spdlog::info("----------");
 }
@@ -344,7 +351,31 @@ void AspectRatioFOV()
 
 void Framerate()
 {
-    // TODO
+    if (bCutsceneFrameGeneration) {
+        // Allow framegen during midnight cutscenes
+        std::uint8_t* CutsceneFrameGenScanResult = Memory::PatternScan(exeModule, "38 5F 5B 0F 85 ?? ?? ?? ?? 48");
+        if (CutsceneFrameGenScanResult) {
+            spdlog::info("Cutscene Frame Generation: Address is {:s}+{:x}", sExeName.c_str(), CutsceneFrameGenScanResult - (std::uint8_t*)exeModule);
+            Memory::Write(CutsceneFrameGenScanResult + 0x5, (int)0);
+            spdlog::info("Cutscene Frame Generation: Enabled cutscene frame generation.");
+        }
+        else {
+            spdlog::error("Cutscene Frame Generation: Pattern scan failed.");
+        }
+    }
+
+    if (bCutsceneFramerateUnlock) {
+        // Ignore cutscene timings and always use actual game timing
+        std::uint8_t* CutsceneFramerateScanResult = Memory::PatternScan(exeModule, "48 8B 41 28 48 8B 90 08 03 00 00");
+        if (CutsceneFramerateScanResult) {
+            spdlog::info("Cutscene Framerate Unlock: Address is {:s}+{:x}", sExeName.c_str(), CutsceneFramerateScanResult - (std::uint8_t*)exeModule);
+            Memory::PatchBytes(CutsceneFramerateScanResult + 0x4, "\x48\x31\xD2\x90\x90\x90\x90", 7);
+            spdlog::info("Cutscene Framerate Unlock: Enabled framerate unlock.");
+        }
+        else {
+            spdlog::error("Cutscene Framerate Unlock: Pattern scan failed.");
+        }
+    }
 }
 
 DWORD __stdcall Main(void*)
