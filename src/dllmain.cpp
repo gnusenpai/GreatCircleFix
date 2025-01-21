@@ -13,7 +13,7 @@ HMODULE thisModule;
 
 // Fix details
 std::string sFixName = "GreatCircleFix";
-std::string sFixVersion = "0.0.4";
+std::string sFixVersion = "0.0.5";
 std::filesystem::path sFixPath;
 
 // Ini
