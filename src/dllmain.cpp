@@ -367,7 +367,16 @@ void Framerate()
             spdlog::info("Cutscene Frame Generation: Enabled cutscene frame generation.");
         }
         else {
-            spdlog::error("Cutscene Frame Generation: Pattern scan failed.");
+            // Code changes in Update 3
+            CutsceneFrameGenScanResult = Memory::PatternScan(exeModule, "38 9F 87 00 00 00 0F 85 ?? ?? ?? ?? 48");
+            if (CutsceneFrameGenScanResult) {
+                spdlog::info("Cutscene Frame Generation (Upd3): Address is {:s}+{:x}", sExeName.c_str(), CutsceneFrameGenScanResult - (std::uint8_t*)exeModule);
+                Memory::Write(CutsceneFrameGenScanResult + 0x8, (int)0);
+                spdlog::info("Cutscene Frame Generation (Upd3): Enabled cutscene frame generation.");
+            }
+            else {
+                spdlog::error("Cutscene Frame Generation: Pattern scan failed.");
+            }
         }
     }
 
