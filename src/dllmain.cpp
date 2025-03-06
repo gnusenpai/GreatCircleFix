@@ -13,7 +13,7 @@ HMODULE thisModule;
 
 // Fix details
 std::string sFixName = "GreatCircleFix";
-std::string sFixVersion = "0.0.6";
+std::string sFixVersion = "0.0.7";
 std::filesystem::path sFixPath;
 
 // Ini
@@ -41,6 +41,7 @@ float fHUDHeightOffset;
 bool bSkipIntro;
 bool bFixCutsceneFOV;
 bool bFixCulling;
+bool bFixDLSSDOFDenoising;
 bool bUnrestrictCVars;
 bool bCutsceneFrameGeneration;
 bool bCutsceneFramerateUnlock;
@@ -122,6 +123,7 @@ void Configuration()
     inipp::get_value(ini.sections["Unrestrict CVars"], "Enabled", bUnrestrictCVars);
     inipp::get_value(ini.sections["Fix Cutscene FOV"], "Enabled", bFixCutsceneFOV);
     inipp::get_value(ini.sections["Fix Culling"], "Enabled", bFixCulling);
+    inipp::get_value(ini.sections["Fix DLSS DOF Denoising"], "Enabled", bFixDLSSDOFDenoising);
     inipp::get_value(ini.sections["Cutscene Frame Generation"], "Enabled", bCutsceneFrameGeneration);
     inipp::get_value(ini.sections["Cutscene Framerate Unlock"], "Enabled", bCutsceneFramerateUnlock);
 
@@ -130,6 +132,7 @@ void Configuration()
     spdlog_confparse(bUnrestrictCVars);
     spdlog_confparse(bFixCutsceneFOV);
     spdlog_confparse(bFixCulling);
+    spdlog_confparse(bFixDLSSDOFDenoising);
     spdlog_confparse(bCutsceneFrameGeneration);
     spdlog_confparse(bCutsceneFramerateUnlock);
 
@@ -304,6 +307,10 @@ void CVars()
                 if (bFixCulling) {
                     // Fix culling issues
                     SetCVar("r_gpuTriangleCullingOptions 0");
+                }
+                if (bFixDLSSDOFDenoising) {
+                    // Fix DLSS-RR failing to denoise correctly whenever DOF is active (eg. during cutscenes, or when journal is open)
+                    SetCVar("r_dofAfterTAAMode 2");
                 }
             });
     }
