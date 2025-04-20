@@ -2,7 +2,7 @@
 #include "helper.hpp"
 
 #include <spdlog/spdlog.h>
-#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/rotating_file_sink.h>
 #include <inipp/inipp.h>
 #include <safetyhook.hpp>
 
@@ -13,7 +13,7 @@ HMODULE thisModule;
 
 // Fix details
 std::string sFixName = "GreatCircleFix";
-std::string sFixVersion = "0.0.7";
+std::string sFixVersion = "0.0.8";
 std::filesystem::path sFixPath;
 
 // Ini
@@ -49,8 +49,6 @@ bool bCutsceneFramerateUnlock;
 // Variables
 int iCurrentResX;
 int iCurrentResY;
-int iOldResX;
-int iOldResY;
 uint8_t* idCmdSystemLocal = nullptr;
 
 void Logging()
@@ -70,7 +68,12 @@ void Logging()
 
     // Spdlog initialisation
     try {
-        logger = spdlog::basic_logger_st(sFixName.c_str(), sExePath.string() + sLogFile, true);
+        // Truncate existing log file
+        std::ofstream file(sExePath.string() + sLogFile, std::ios::trunc);
+        if (file.is_open()) file.close();
+
+        // Create single log file that's size-limited to 10MB
+        logger = std::make_shared<spdlog::logger>(sFixName, std::make_shared<spdlog::sinks::rotating_file_sink_st>(sExePath.string() + sLogFile, 10 * 1024 * 1024, 1));
         spdlog::set_default_logger(logger);
         spdlog::flush_on(spdlog::level::debug);
 
@@ -276,7 +279,7 @@ void CVars()
 
         for (int i = 0; i < 15; ++i) {
             idCmdSystemLocal = Memory::GetAbsolute(idCmdSystemScanResult + 0x3);
-            if (*(uint8_t*)idCmdSystemLocal)
+            if (*(std::uint8_t*)idCmdSystemLocal)
                 break;
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
