@@ -238,12 +238,12 @@ void CVars()
 {
     if (bUnrestrictCVars) {
         // Remove cvar restrictions
-        std::uint8_t* ConsoleCVarRestrictionsScanResult = Memory::PatternScan(exeModule, "BA 01 00 00 00 49 ?? ?? 44 ?? ?? 41 FF ?? ?? 66 0F ?? ?? ?? ?? ?? ??");
+        std::uint8_t* ConsoleCVarRestrictionsScanResult = Memory::PatternScan(exeModule, "08 4C 8B 0E BA 01");
         std::uint8_t* BindCVarRestrictionsScanResult = Memory::PatternScan(exeModule, "BA 01 00 00 00 49 ?? ?? 8B ?? 41 FF ?? ?? 8B ?? 8B ?? E8 ?? ?? ?? ??");
         std::uint8_t* ExecCVarRestrictionsScanResult = Memory::PatternScan(exeModule, "BA 01 00 00 00 E8 ?? ?? ?? ?? 83 ?? ?? ?? ?? ?? 00 0F 84 ?? ?? ?? ??");
         if (ConsoleCVarRestrictionsScanResult) {
             spdlog::info("CVar Restrictions: Console: Address is {:s}+{:x}", sExeName.c_str(), ConsoleCVarRestrictionsScanResult - (std::uint8_t*)exeModule);
-            Memory::Write(ConsoleCVarRestrictionsScanResult + 0x1, (int)0);
+            Memory::Write(ConsoleCVarRestrictionsScanResult + 0x5, (int)0);
         }
         if (BindCVarRestrictionsScanResult) {
             spdlog::info("CVar Restrictions: Bind: Address is {:s}+{:x}", sExeName.c_str(), BindCVarRestrictionsScanResult - (std::uint8_t*)exeModule);
